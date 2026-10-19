@@ -42,7 +42,9 @@ Functions follow List's curried argument order, with the collection last where L
 
 The module includes construction and conversion; indexed edits; map/mapi/map2/mapi2/map3; collect/concat; filter/choose/partition; fold/foldBack/fold2/foldBack2; scan/scanBack/mapFold/mapFoldBack; iter/iteri/iter2/iteri2; searches in both directions; exists/forall and their two-input versions; numeric aggregates; sorting; distinct/except; zip/unzip variants; allPairs; slicing; grouping; windowing; chunking; transpose; permute; and unfold.
 
-Less frequently used helpers (including slicing, sorting, grouping, and multi-input operations) currently convert through F# List to preserve its ordering, argument checks, and mismatch behavior. They allocate intermediate lists and rebuild their results; they do not yet exploit structural sharing. Core indexed edits and concatenation operate directly on the tree. `fold` and `iter` traverse leaf arrays directly; general `seq` enumeration uses one traversal stack per enumerator. The source is the authoritative public API.
+Module helpers operate directly on the tree. Length-preserving transforms such as `map`, `mapi`, `map2`, and `mapFold` retain its shape, allocate new value and child arrays, and share immutable cumulative counts. Filtering, choosing, partitioning, and other variable-length transforms build packed leaves without staging the whole result in a sequence buffer or linked list. Slicing shares covered subtrees and balances the boundaries; chunks and windows can also share storage with their input.
+
+Folds, iteration, and searches traverse leaf arrays directly, with searches stopping at the first match in the requested direction. Multi-input operations traverse independent cursors so differently shaped trees work together. Sorting uses stable merges over private working arrays; grouping and distinct operations use structural hashing and retain first-occurrence order, including null keys. General `seq` enumeration uses one traversal stack per enumerator. The source is the authoritative public API.
 
 ## Build and test
 
@@ -51,7 +53,7 @@ dotnet build CacheList.slnx -c Release
 dotnet test CacheList.slnx -c Release
 ```
 
-The xUnit suite checks array aliasing, concurrent forks, physical subtree sharing, old snapshots after randomized edits, model equivalence, concatenation across tree heights, leaf depth, occupancy, cumulative counts, root collapse, helper behavior against List, and invalid arguments.
+The xUnit suite checks array aliasing, concurrent forks, physical subtree sharing, old snapshots after randomized edits, model equivalence, concatenation across tree heights, leaf depth, occupancy, cumulative counts, root collapse, helper behavior against List, and invalid arguments. Module regression tests also cover shape-preserving transforms, randomized slicing and bulk edits, callback order and short-circuiting, stable sorting, structural/null keys, differently shaped inputs, overflow, and sequence disposal.
 
 ## Benchmarks
 
@@ -92,4 +94,4 @@ All helpers use the shared input containing integers from zero to N - 1. Map add
 
 BenchmarkDotNet measures time and managed allocation at 1,024 and 65,536 elements. Cases compare append, prepend, middle insertion and removal, last removal, replacement, indexing, fold traversal, sequence traversal, concatenation, and bulk construction against F# List and arrays. Array edits copy their input so that comparisons preserve previous versions. Every benchmark starts from a stable prebuilt input, returns the result, and does not grow shared state across invocations. Build cases measure construction from an existing array. Allocation includes a new result, not retained snapshots. Run the default isolated process toolchain for reliable comparisons; in-process short runs are useful for local feedback and have wider uncertainty.
 
-Reports are written to `BenchmarkDotNet.Artifacts/results/`. See [the recorded local run](docs/benchmarks.md) for measured results and limitations.
+Reports are written to `BenchmarkDotNet.Artifacts/results/`. See [the recorded local run](docs/benchmarks.md) for measured results and limitations, and [the module optimization comparison](docs/module-optimization.md) for before/after measurements.
