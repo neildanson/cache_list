@@ -1,0 +1,7 @@
+**/bin/
+**/obj/
+.dotnet-home/
+BenchmarkDotNet.Artifacts/
+TestResults/
+benchmark-*.log
+.vs
