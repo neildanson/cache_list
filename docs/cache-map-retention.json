@@ -1,0 +1,134 @@
+[
+  {
+    "allocatedBytes": 878848,
+    "implementation": "packed",
+    "keyType": "Int32",
+    "liveBytes": 847880,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 1
+  },
+  {
+    "allocatedBytes": 878848,
+    "implementation": "packed",
+    "keyType": "Int32",
+    "liveBytes": 847880,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 2
+  },
+  {
+    "allocatedBytes": 878848,
+    "implementation": "packed",
+    "keyType": "Int32",
+    "liveBytes": 847880,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 3
+  },
+  {
+    "allocatedBytes": 626216,
+    "implementation": "map",
+    "keyType": "Int32",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 1
+  },
+  {
+    "allocatedBytes": 626216,
+    "implementation": "map",
+    "keyType": "Int32",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 2
+  },
+  {
+    "allocatedBytes": 626216,
+    "implementation": "map",
+    "keyType": "Int32",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 3
+  },
+  {
+    "allocatedBytes": 1089848,
+    "implementation": "packed",
+    "keyType": "String",
+    "liveBytes": 1058184,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 1
+  },
+  {
+    "allocatedBytes": 1089848,
+    "implementation": "packed",
+    "keyType": "String",
+    "liveBytes": 1058184,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 2
+  },
+  {
+    "allocatedBytes": 1089848,
+    "implementation": "packed",
+    "keyType": "String",
+    "liveBytes": 1058184,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 3
+  },
+  {
+    "allocatedBytes": 626360,
+    "implementation": "map",
+    "keyType": "String",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 1
+  },
+  {
+    "allocatedBytes": 626360,
+    "implementation": "map",
+    "keyType": "String",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 2
+  },
+  {
+    "allocatedBytes": 626360,
+    "implementation": "map",
+    "keyType": "String",
+    "liveBytes": 620744,
+    "n": 4096,
+    "roots": 1024,
+    "steps": 1023,
+    "validated": true,
+    "repeat": 3
+  }
+]

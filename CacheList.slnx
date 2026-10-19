@@ -5,4 +5,5 @@
     <File Path="README.md" />
   </Folder>
   <Project Path="benchmarks/CacheList.Benchmarks/CacheList.Benchmarks.fsproj" />
+  <Project Path="benchmarks/CacheMap.Benchmarks/CacheMap.Benchmarks.fsproj" />
 </Solution>

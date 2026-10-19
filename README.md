@@ -16,6 +16,21 @@ let total = doubled |> Seq.sum
 
 Reference `src/CacheList/CacheList.fsproj` from an F# project. `CacheList<'T>` implements `IEnumerable<'T>` (F# `seq<'T>`), non-generic `IEnumerable`, and `IReadOnlyList<'T>`. It exposes `Length`, `Count`, `IsEmpty`, and an indexer. Equality, hashing, and lexicographic comparison use element values, independently of tree shape.
 
+The same assembly also provides **`CacheMap<'Key,'Value>`**, a persistent ordered map with packed key/value leaves and path-copying edits. Its module follows F# Map's argument order and sorted-key semantics, with direct folds, shape-preserving `map`, filtering, partitioning, and read-only dictionary access. See [the design, API, and benchmarking guide](docs/cache-map.md).
+
+```fsharp
+let originalMap = CacheMap.ofList ["Ada", 10; "Grace", 20]
+let editedMap = originalMap |> CacheMap.add "Ada" 11 |> CacheMap.remove "Grace"
+let originalScore = CacheMap.find "Ada" originalMap // 10
+```
+
+Map benchmarks are separate and independently selectable:
+
+```powershell
+dotnet run -c Release --project benchmarks/CacheMap.Benchmarks -- --filter '*Lookup*' --job short
+dotnet run -c Release --project benchmarks/CacheMap.Benchmarks -- --filter '*' --job short
+```
+
 ## Storage and persistence
 
 Leaves store up to 32 adjacent values. Branches store up to 32 child references and cumulative element counts, allowing binary search by index. All leaves have the same depth. Non-root nodes remain between 16 and 32 entries through splitting, merging, and redistribution; the root can be smaller and collapses when it has one child. This is a B+ tree sequence, inspired by the proposed B* direction; it uses half-full occupancy rather than strict B* two-thirds occupancy.
@@ -101,3 +116,20 @@ BenchmarkDotNet measures time and managed allocation at 1,024 and 65,536 element
 Reports are written to `BenchmarkDotNet.Artifacts/results/`. See [the recorded local run](docs/benchmarks.md) for measured results and limitations, and [the module optimization comparison](docs/module-optimization.md) for before/after measurements.
 
 [The edit optimization comparison](docs/edit-optimization.md) records before/after results for updates, concatenation, insertion, and removal, including the boundary cases.
+
+The separate [capacity comparison](docs/capacity-comparison.md) tests node capacities 16, 32, and 64 with minimum occupancy at half capacity:
+
+```powershell
+dotnet run -c Release --project benchmarks/CacheList.CapacityBenchmarks -- --validate-only
+dotnet run -c Release --project benchmarks/CacheList.CapacityBenchmarks -- --filter '*' --job short
+```
+
+That project uses PowerShell 7 (`pwsh`) at build time to generate isolated variants from the current library source under `obj/`. It changes only the namespace and the two capacity constants. It runs model, balance, and persistence checks for every variant before benchmarking, and does not change the production library's capacity.
+
+[Persistence and locality evidence](docs/persistence-locality-proof.md) adds allocation-free traversal controls, edit-shaped inputs, scattered references, 64-byte values, retained-heap measurements, and a .NET ImmutableList comparison. It records the blocked hardware-counter probe explicitly; the results demonstrate measured workload benefits without claiming to have measured CPU cache misses.
+
+```powershell
+dotnet run -c Release --project benchmarks/CacheList.ProofBenchmarks -- --validate-only
+dotnet run -c Release --project benchmarks/CacheList.ProofBenchmarks -- --filter '*PublicFoldInt*' --job short
+./benchmarks/CacheList.ProofBenchmarks/Measure-Retention.ps1 -Repeats 3
+```
