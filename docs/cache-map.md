@@ -44,6 +44,8 @@ The type exposes `Count`, `IsEmpty`, indexing, `ContainsKey`, `TryFind`, `TryGet
 
 ## Benchmarking
 
+The [expanded benchmark suite guide](../benchmarks/CacheMap.Benchmarks/README.md) lists all 18 selectable groups and 312 parameter cases, including `ContainsKey`, allocation-free `TryGetValue`, `Find`, `Change`, `Partition`, `Enumeration`, `ToArray`, `ToList`, `Search`, `FoldBack`, `Iteration`, and `Extremes`. The recorded timings below cover the original six groups; the added groups have separate validation and execution checks.
+
 The independent BenchmarkDotNet project compares public CacheMap and F# Map operations, with `int` and fixed-format string keys and integer values, at 1,024 and 65,536 entries. Read/edit sources are built through deterministic shuffled inserts for both implementations. Bulk construction is measured separately with ordered and shuffled input. No mutable dictionary edit is treated as equivalent to creating a persistent version.
 
 | Group | Work performed |

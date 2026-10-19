@@ -24,7 +24,7 @@ let editedMap = originalMap |> CacheMap.add "Ada" 11 |> CacheMap.remove "Grace"
 let originalScore = CacheMap.find "Ada" originalMap // 10
 ```
 
-Map benchmarks are separate and independently selectable:
+Map benchmarks are separate and independently selectable. The [CacheMap suite](benchmarks/CacheMap.Benchmarks/README.md) includes 18 groups covering lookup APIs, persistent edits, construction, transforms, partition, traversal, searches, conversions, and retained histories:
 
 ```powershell
 dotnet run -c Release --project benchmarks/CacheMap.Benchmarks -- --filter '*Lookup*' --job short
