@@ -82,44 +82,88 @@ module internal Tree =
         | Leaf a -> Leaf(replace index value a)
         | Branch (a, s) ->
             let struct (i, j) = locate index s
-            branch (replace i (update j value a[i]) a)
+            // Value replacement leaves every cumulative count unchanged.
+            Branch(replace i (update j value a[i]) a, s)
     let splice i remove (insert: 'T array) (a: 'T array) =
         let result = Array.zeroCreate (a.Length - remove + insert.Length)
         Array.Copy(a, 0, result, 0, i)
         Array.Copy(insert, 0, result, i, insert.Length)
         Array.Copy(a, i + remove, result, i + insert.Length, a.Length - i - remove)
         result
-    let splitLeaf a =
-        if Array.length a <= width then [| Leaf a |]
-        else [| Leaf a[..minimum-1]; Leaf a[minimum..] |]
-    let splitBranch a =
-        if Array.length a <= width then [| branch a |]
-        else [| branch a[..minimum-1]; branch a[minimum..] |]
+    // Copy a range of the logical insertion directly into its final leaf.
+    let insertRange i value (a: 'T array) start length =
+        let result = Array.zeroCreate length
+        let finish = start + length
+        let prefixEnd = min i finish
+        if start < prefixEnd then Array.Copy(a, start, result, 0, prefixEnd - start)
+        if start <= i && i < finish then result[i-start] <- value
+        let suffixStart = max start (i + 1)
+        if suffixStart < finish then Array.Copy(a, suffixStart - 1, result, suffixStart - start, finish - suffixStart)
+        result
+    // Copy a range of a logical splice, without constructing the whole splice.
+    let spliceRange i remove (insert: 'T array) (a: 'T array) start length =
+        let result = Array.zeroCreate length
+        let finish = start + length
+        let prefixEnd = min i finish
+        if start < prefixEnd then Array.Copy(a, start, result, 0, prefixEnd - start)
+        let insertStart = max start i
+        let insertEnd = min finish (i + insert.Length)
+        if insertStart < insertEnd then Array.Copy(insert, insertStart - i, result, insertStart - start, insertEnd - insertStart)
+        let suffixStart = max start (i + insert.Length)
+        if suffixStart < finish then Array.Copy(a, suffixStart - insert.Length + remove, result, suffixStart - start, finish - suffixStart)
+        result
+    let spliceBranch i remove insert (a: Node<'T> array) =
+        let length = a.Length - remove + Array.length insert
+        if length <= width then [| branch (splice i remove insert a) |]
+        else
+            [| branch (spliceRange i remove insert a 0 minimum)
+               branch (spliceRange i remove insert a minimum (length - minimum)) |]
     let rec insert index value = function
-        | Leaf a -> splice index 0 [|value|] a |> splitLeaf
+        | Leaf a ->
+            let length = a.Length + 1
+            if length <= width then [| Leaf(insertRange index value a 0 length) |]
+            else
+                [| Leaf(insertRange index value a 0 minimum)
+                   Leaf(insertRange index value a minimum (length - minimum)) |]
         | Branch (a, s) ->
             let struct (i, j) = if index = s[s.Length-1] then struct (a.Length - 1, count a[a.Length - 1]) else locate index s
-            splice i 1 (insert j value a[i]) a |> splitBranch
+            spliceBranch i 1 (insert j value a[i]) a
+    let concatRange (a: 'T array) (b: 'T array) start length =
+        let result = Array.zeroCreate length
+        let fromLeft = max 0 (min length (a.Length - start))
+        if fromLeft > 0 then Array.Copy(a, start, result, 0, fromLeft)
+        if fromLeft < length then Array.Copy(b, max 0 (start - a.Length), result, fromLeft, length - fromLeft)
+        result
+    // Keep both nodes when they are already valid children and cannot fit in
+    // one node. Underfull roots still need merging or redistribution.
     let combine left right =
         match left, right with
         | Leaf a, Leaf b ->
-            let all = Array.append a b
-            if all.Length <= width then [| Leaf all |]
-            else let half = all.Length / 2 in [| Leaf all[..half-1]; Leaf all[half..] |]
+            let length = a.Length + b.Length
+            if length <= width then [| Leaf(Array.append a b) |]
+            elif a.Length >= minimum && b.Length >= minimum then [| left; right |]
+            else
+                let half = length / 2
+                [| Leaf(concatRange a b 0 half); Leaf(concatRange a b half (length - half)) |]
         | Branch (a,_), Branch (b,_) ->
-            let all = Array.append a b
-            if all.Length <= width then [| branch all |]
-            else let half = all.Length / 2 in [| branch all[..half-1]; branch all[half..] |]
+            let length = a.Length + b.Length
+            if length <= width then [| branch (Array.append a b) |]
+            elif a.Length >= minimum && b.Length >= minimum then [| left; right |]
+            else
+                let half = length / 2
+                [| branch (concatRange a b 0 half); branch (concatRange a b half (length - half)) |]
         | _ -> invalidOp "Unbalanced tree"
     let rec remove index = function
         | Leaf a -> Leaf(splice index 1 [||] a)
         | Branch (a, s) ->
             let struct (i, j) = locate index s
-            let children = replace i (remove j a[i]) a
-            if arity children[i] < minimum && children.Length > 1 then
+            let child = remove j a[i]
+            if arity child < minimum && a.Length > 1 then
                 let first = if i = 0 then 0 else i - 1
-                branch (splice first 2 (combine children[first] children[first+1]) children)
-            else branch children
+                let left = if first = i then child else a[first]
+                let right = if first + 1 = i then child else a[first+1]
+                branch (splice first 2 (combine left right) a)
+            else branch (replace i child a)
     let rec normalize = function
         | Branch (a, _) when a.Length = 1 -> normalize a[0]
         | node -> node
@@ -128,11 +172,11 @@ module internal Tree =
         if lh = rh then combine left right
         elif lh > rh then
             match left with
-            | Branch(a,_) -> splice (a.Length-1) 1 (join a[a.Length-1] (lh-1) right rh) a |> splitBranch
+            | Branch(a,_) -> spliceBranch (a.Length-1) 1 (join a[a.Length-1] (lh-1) right rh) a
             | _ -> invalidOp "Invalid height"
         else
             match right with
-            | Branch(a,_) -> splice 0 1 (join left lh a[0] (rh-1)) a |> splitBranch
+            | Branch(a,_) -> spliceBranch 0 1 (join left lh a[0] (rh-1)) a
             | _ -> invalidOp "Invalid height"
     let rec fold folder state = function
         | Leaf a -> Array.fold folder state a

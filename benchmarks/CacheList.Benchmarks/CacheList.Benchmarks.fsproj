@@ -4,6 +4,7 @@
   <ItemGroup>
     <Compile Include="BenchmarkInput.fs" />
     <Compile Include="ModuleOperations.fs" />
+    <Compile Include="EditBoundaries.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>
 </Project>

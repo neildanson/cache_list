@@ -70,8 +70,10 @@ Or select operations directly:
 dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*Append*' --job short
 # Prepend only:
 dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*Prepend*' --job short
-# Both removal operations (or use '*RemoveMiddle*' / '*RemoveLast*' individually):
+# Removal operations, including merge and redistribution cases:
 dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*Remove*' --job short
+# Merge, redistribution, spare-slot insertion, and underfull-root concatenation:
+dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*EditBoundaries*' --job short
 # Multiple operations:
 dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*Append*' '*Prepend*' --job short
 # Map and filter only (use '*Map.*' to exclude Mapi):
@@ -88,6 +90,8 @@ dotnet run -c Release --project benchmarks/CacheList.Benchmarks -- --filter '*' 
 
 The independent groups are `Append`, `Prepend`, `RemoveMiddle`, `RemoveLast`, `Update`, `Index`, `Iterate`, `Build`, `InsertMiddle`, `Concat`, and `Sequence`. Each group produces its own report. Filters also support individual implementations, such as `'*TreeAppend*'`.
 
+`EditBoundaries` adds CacheList cases for removal that forces a merge or redistribution, insertion into a spare leaf slot, and concatenation with an underfull root. These complement the regular bulk-built inputs with paths that require rebalancing. Filters such as `'*Remove*'` include the corresponding boundary cases too.
+
 Module helper groups are `Map`, `Mapi`, `Filter`, `Choose`, `Partition`, `Reverse`, `SortBy`, `DistinctBy`, `GroupBy`, `CountBy`, `Scan`, and `SumBy`. They compare the corresponding CacheList, Array, and List functions and can be selected individually from the same menu or together with the `Module` category.
 
 All helpers use the shared input containing integers from zero to N - 1. Map adds one; Mapi adds the index. Filter and Partition select even values (50%); Choose selects even values and adds one. SortBy sorts by the negated value, reversing the initially ascending input. DistinctBy, GroupBy, and CountBy use the value modulo 128, producing 128 keys. Scan and SumBy accumulate as `int64` to avoid integer overflow. Each benchmark returns the complete result in its collection's native representation, including nested groups, so allocation includes materialising those results. The existing Iterate group compares module folds.
@@ -95,3 +99,5 @@ All helpers use the shared input containing integers from zero to N - 1. Map add
 BenchmarkDotNet measures time and managed allocation at 1,024 and 65,536 elements. Cases compare append, prepend, middle insertion and removal, last removal, replacement, indexing, fold traversal, sequence traversal, concatenation, and bulk construction against F# List and arrays. Array edits copy their input so that comparisons preserve previous versions. Every benchmark starts from a stable prebuilt input, returns the result, and does not grow shared state across invocations. Build cases measure construction from an existing array. Allocation includes a new result, not retained snapshots. Run the default isolated process toolchain for reliable comparisons; in-process short runs are useful for local feedback and have wider uncertainty.
 
 Reports are written to `BenchmarkDotNet.Artifacts/results/`. See [the recorded local run](docs/benchmarks.md) for measured results and limitations, and [the module optimization comparison](docs/module-optimization.md) for before/after measurements.
+
+[The edit optimization comparison](docs/edit-optimization.md) records before/after results for updates, concatenation, insertion, and removal, including the boundary cases.
